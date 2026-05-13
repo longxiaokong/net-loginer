@@ -14,6 +14,11 @@ use ureq::tls::{TlsConfig, TlsProvider};
 use crate::classifier::Classifier;
 
 const NET_AUTH_BASEURL: &str = "https://net-auth.shanghaitech.edu.cn:19008";
+const CAPTIVE_PROBES: &[&str] = &[
+    "http://captive.apple.com/hotspot-detect.html",
+    "http://connectivitycheck.gstatic.com/generate_204",
+    "http://www.msftconnecttest.com/connecttest.txt",
+];
 
 #[derive(Debug, PartialEq)]
 pub enum AuthResult {
@@ -76,6 +81,58 @@ impl Authenticator {
 }
 
 impl Authenticator {
+    fn parse_page_params_from_url(final_url: &str) -> Result<(String, String)> {
+        let redirected_url = Url::parse(final_url)?;
+        let query_params: HashMap<_, _> = redirected_url.query_pairs().into_owned().collect();
+
+        let push_page_id = query_params
+            .get("pushPageId")
+            .ok_or(anyhow!("Cannot find pushPageId in query parameters"))?
+            .to_string();
+        let ssid = query_params
+            .get("ssid")
+            .ok_or(anyhow!("Cannot find ssid in query parameters"))?
+            .to_string();
+
+        Ok((push_page_id, ssid))
+    }
+
+    fn get_page_params_from_probe(&self) -> Result<(String, String)> {
+        let mut last_error = String::new();
+
+        for &probe_url in CAPTIVE_PROBES {
+            log::info!("Trying captive probe: {}", probe_url);
+            match self.client.get(probe_url).call() {
+                Ok(response) => {
+                    let final_url = response.get_uri().to_string();
+                    log::info!("Probe final URL: {}", final_url);
+
+                    match Self::parse_page_params_from_url(&final_url) {
+                        Ok((push_page_id, ssid)) => {
+                            log::info!("Get pushPageId from probe: {:?}", push_page_id);
+                            log::info!("Get ssid from probe: {:?}", ssid);
+                            return Ok((push_page_id, ssid));
+                        }
+                        Err(err) => {
+                            last_error = format!(
+                                "Probe {} did not provide login params, final URL: {}, error: {}",
+                                probe_url, final_url, err
+                            );
+                        }
+                    }
+                }
+                Err(err) => {
+                    last_error = format!("Probe {} request failed: {}", probe_url, err);
+                }
+            }
+        }
+
+        Err(anyhow!(
+            "Cannot get pushPageId/ssid from captive probes. Last error: {}",
+            last_error
+        ))
+    }
+
     fn get_ip_addresses() -> Result<Vec<Ipv4Addr>> {
         let ip_addresses = get_if_addrs()?
             .into_iter()
@@ -110,6 +167,10 @@ impl Authenticator {
     }
 
     fn get_page_params(&self, ip_address: Ipv4Addr) -> Result<(String, String)> {
+        if let Ok((push_page_id, ssid)) = self.get_page_params_from_probe() {
+            return Ok((push_page_id, ssid));
+        }
+
         let verify_url = format!(
             "{}/portal?uaddress={}&ac-ip=0",
             NET_AUTH_BASEURL, ip_address
@@ -117,18 +178,7 @@ impl Authenticator {
 
         let response = self.client.get(&verify_url).call()?;
         let final_url = response.get_uri().to_string();
-
-        let redirected_url = Url::parse(&final_url)?;
-        let query_params: HashMap<_, _> = redirected_url.query_pairs().into_owned().collect();
-
-        let push_page_id = query_params
-            .get("pushPageId")
-            .ok_or(anyhow!("Cannot find pushPageId in query parameters"))?
-            .to_string();
-        let ssid = query_params
-            .get("ssid")
-            .ok_or(anyhow!("Cannot find ssid in query parameters"))?
-            .to_string();
+        let (push_page_id, ssid) = Self::parse_page_params_from_url(&final_url)?;
 
         log::info!("Get pushPageId: {:?}", push_page_id);
         log::info!("Get ssid: {:?}", ssid);
