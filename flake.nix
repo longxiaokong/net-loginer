@@ -41,7 +41,7 @@
           ortEnv
           // {
             pname = "net-loginer";
-            version = "0.5.2";
+            version = "0.5.3";
             src = self;
 
             cargoLock.lockFile = ./Cargo.lock;
