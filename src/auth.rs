@@ -5,11 +5,9 @@ use std::error::Error;
 use std::net::Ipv4Addr;
 use std::str::FromStr;
 use thiserror::Error;
+use ureq::tls::{TlsConfig, TlsProvider};
 use ureq::{Agent, ResponseExt};
 use url::Url;
-
-#[cfg(feature = "native-tls")]
-use ureq::tls::{TlsConfig, TlsProvider};
 
 use crate::classifier::Classifier;
 

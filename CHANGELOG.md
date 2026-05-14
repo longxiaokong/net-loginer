@@ -1,3 +1,7 @@
+## [0.5.2] - 2026-05-14
+
+- 修复 release workflow 中 `rustls` 构建失败的问题
+
 ## [0.5.1] - 2026-05-14
 
 - 新增 Nix flake 构建环境
@@ -38,6 +42,7 @@
 - Initial release
 - 在 Windows 和 Linux 上通过测试
 
+[0.5.2]: https://github.com/ShanghaitechGeekPie/net-loginer/releases/tag/v0.5.2
 [0.5.1]: https://github.com/ShanghaitechGeekPie/net-loginer/releases/tag/v0.5.1
 [0.5.0]: https://github.com/ShanghaitechGeekPie/net-loginer/releases/tag/v0.5.0
 [0.4.2]: https://github.com/ShanghaitechGeekPie/net-loginer/releases/tag/v0.4.2
