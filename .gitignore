@@ -3,3 +3,6 @@
 
 # Target directory
 /target
+
+# Nix build result symlink
+/result

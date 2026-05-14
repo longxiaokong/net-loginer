@@ -1,3 +1,7 @@
+## [0.5.1] - 2026-05-14
+
+- 新增 Nix flake 构建环境
+
 ## [0.5.0] - 2024-09-23
 
 - 真静态编译，不再需要手动安装 `onnxruntime`，体积因此大幅增加
@@ -34,6 +38,7 @@
 - Initial release
 - 在 Windows 和 Linux 上通过测试
 
+[0.5.1]: https://github.com/ShanghaitechGeekPie/net-loginer/releases/tag/v0.5.1
 [0.5.0]: https://github.com/ShanghaitechGeekPie/net-loginer/releases/tag/v0.5.0
 [0.4.2]: https://github.com/ShanghaitechGeekPie/net-loginer/releases/tag/v0.4.2
 [0.4.1]: https://github.com/ShanghaitechGeekPie/net-loginer/releases/tag/v0.4.1
